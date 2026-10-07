@@ -14,16 +14,16 @@ to slice them in half. Three.js, plain JavaScript, no build step.
 - Fully playable first version. Menu, three tempos, gameplay, pause,
   game over, saved best score. Verified in headless Chromium with no
   console errors.
-- Standalone git repo on `main`, one commit of game code plus this file.
-- NOT yet on GitHub. Creating repos through the Claude GitHub integration
-  returned 403. Blocked on the owner creating an empty GitHub repo named
-  `war-machine` and giving the Claude GitHub App access, then the next
-  session attaches it and pushes `main`.
-- If this container was lost before the push, the whole project exists in
-  this session's chat transcript and (unintended, do not touch) on the
-  Hackbeat repo branch `ccr-a44f2736-oqxxet` under `war-machine/`. That
-  copy is identical to the first commit here minus HANDOFF.md and
-  .gitignore. Owner has said: do not modify Hackbeat in any way.
+- On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
+  `main`. This is the source of truth. Start new sessions with this repo
+  selected.
+- Cloud-session note: the Claude GitHub integration cannot create repos
+  (403), the owner created this one by hand. In the original session the
+  working clone was `/home/user/warmachine`; `/home/user/war-machine` was
+  the pre-push local repo and can be ignored.
+- An early copy of the game also sits on the Hackbeat repo branch
+  `ccr-a44f2736-oqxxet` under `war-machine/`. It is stale. Owner's rule:
+  do not modify Hackbeat in any way.
 
 ## Decisions made (owner's)
 
