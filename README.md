@@ -15,15 +15,31 @@ the Web Audio API). Best score is saved in the browser's local storage.
 Double-click `index.html`. That's it. Works with a mouse, a trackpad, or a
 finger on a phone.
 
-To put it online, copy the folder to any static host (GitHub Pages, an S3
-bucket, a shared folder). To hand it to someone as a single file:
+## Ship it
+
+The folder is the source. What you ship is one file:
 
 ```bash
-node pack.js          # writes dist/war-machine.html with everything inlined
+node pack.js          # writes dist/war-machine.html
 ```
 
-That one file opens anywhere a browser does, and is the thing to wrap when
-the game goes to phones as an app.
+That builds the **WAD build**: every game file (page, stylesheet, scripts,
+Three.js) is packed into a single binary container with a directory, like
+Doom's WAD, gzip-compressed, then encrypted with AES-256-GCM and embedded
+in a small loader page that unpacks it in memory at startup. About 275 KB.
+It opens anywhere a browser does, from a double-click or any static host,
+and it's the thing to wrap when the game goes to phones as an app.
+
+Because the encryption is authenticated, a copy that has been edited, even
+by one byte, refuses to run and says so instead of behaving strangely.
+
+Set your own key with `WM_KEY="something secret" node pack.js`. Keep in
+mind the loader has to carry the key to unpack the game, so this stops
+casual poking and detects tampering; it cannot hide the game from someone
+determined, and nothing that runs on the player's device can.
+
+`node pack.js --plain` writes the same single file with everything inlined
+in plain text, which is handy for debugging a shipped build.
 
 ## How it plays
 
@@ -67,7 +83,7 @@ src/
   input.js        pointer tracking → swipe segments
 vendor/
   three.js        Three.js (MIT) as one classic script defining `THREE`
-pack.js           optional: inlines everything into dist/war-machine.html
+pack.js           builds dist/war-machine.html (WAD build, or --plain)
 ```
 
 The scripts are plain (not ES modules) on purpose: browsers refuse to load

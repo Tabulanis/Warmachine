@@ -39,15 +39,14 @@ double-click.
   single-file sharing; that file is what to wrap (Capacitor or similar)
   when it goes to app stores. The README's old "serve over HTTP" step is
   gone.
-- Owner (2026-10-09): "keep in mind, we also want to be able to secure it
-  somehow." Not yet specified what that means (copy protection, cheating /
-  score integrity, paid access). Open question; nothing built for it. The
-  constraint to remember: anything that runs client-only is readable by
-  the player, so real protection means either the app stores (paid app /
-  in-app purchase, the store enforces it) or a small server for the parts
-  that must be trusted (leaderboards, unlocks). Minifying/obfuscating the
-  pack is cheap but cosmetic. Do not add licence checks or encryption that
-  ship their own key; they only annoy players.
+- Owner (2026-10-09): "we want to secure it somehow ... a compressed or
+  encrypted file, like a WAD for the old Doom games, because we don't want
+  people getting in and monkeying with it." Done: `node pack.js` now
+  produces the WAD build (see Ship it below). The limit was stated to the
+  owner: the loader carries the key, so this deters casual editing and
+  detects tampering (authenticated encryption), it does not hide the game
+  from a determined person. Real paid-access protection is the app stores;
+  trusted scores/unlocks would need a small server. Neither built.
 - The first version (neon tunnel, drones/missiles/mines) is commit d420b82
   if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
@@ -76,7 +75,31 @@ double-click.
 ## Run it
 
 Double-click `index.html`. A static server also works but is not needed.
-`node pack.js` writes `dist/war-machine.html`, the single-file build.
+
+## Ship it (the WAD build)
+
+`node pack.js` writes `dist/war-machine.html` (gitignored), ~275 KB, the
+only thing to distribute or wrap for phones. How it is made, all in
+pack.js with no dependencies (Node 18+):
+- Container: "WMWAD" + version u8 + count u32, then a directory of
+  (nameLen u16, name, offset u32, size u32), then the data. Entries in
+  load order: index.html (the page body only), styles.css, vendor/three.js,
+  src/beat.js, src/input.js, src/game.js, src/main.js.
+- gzip level 9, then AES-256-GCM with a random 12-byte IV; key =
+  SHA-256(WM_KEY env var, default 'war-machine:a-night-at-the-castle').
+  Output = IV + ciphertext + 16-byte auth tag, base64 in a
+  <script type="application/octet-stream"> tag.
+- Loader (inline in the same HTML): base64 -> WebCrypto AES-GCM decrypt
+  (the raw key is embedded in the loader as base64) -> DecompressionStream
+  gzip -> parse directory -> .html becomes document.body, .css becomes a
+  <style>, .js becomes a <script> appended in order (synchronous
+  execution, so load order is preserved). Any failure shows "This copy of
+  War Machine is damaged or has been altered and will not run."
+- Browser needs: WebCrypto + DecompressionStream (Chrome 80+, Safari
+  16.4+, Firefox 113+). Both tested from file:// in headless Chromium,
+  including a one-byte tamper test that correctly refuses to run.
+- `node pack.js --plain` makes the old inlined plain-text single file for
+  debugging. If a shipped build misbehaves, build --plain first.
 
 ## Layout
 
