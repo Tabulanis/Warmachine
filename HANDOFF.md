@@ -47,6 +47,17 @@ double-click.
   detects tampering (authenticated encryption), it does not hide the game
   from a determined person. Real paid-access protection is the app stores;
   trusted scores/unlocks would need a small server. Neither built.
+- Owner (2026-10-09): "make a fake little browser of our own to run the
+  game" -> "go ahead, set it all up." Done: two app shells around the WAD
+  build. Capacitor (android/ and ios/ generated with cap 7.6.9 and
+  committed; capacitor.config.json; root package.json scripts) and
+  Electron (desktop/main.js + package.json with electron-builder config).
+  The Electron shell was smoke-tested in the cloud container under Xvfb
+  (`WM_SMOKE=1 electron . --no-sandbox`: the packed game reached the menu,
+  THREE r186 loaded). The phone builds have NOT been run: the container
+  has no Android SDK and no Xcode. The owner builds those on their
+  machine (see README "App shells"). First thing to check there:
+  `npm run android` opens Android Studio and the app runs on a device.
 - The first version (neon tunnel, drones/missiles/mines) is commit d420b82
   if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
@@ -100,6 +111,29 @@ pack.js with no dependencies (Node 18+):
   including a one-byte tamper test that correctly refuses to run.
 - `node pack.js --plain` makes the old inlined plain-text single file for
   debugging. If a shipped build misbehaves, build --plain first.
+- pack.js also writes dist/www/index.html (identical). That folder is
+  Capacitor's webDir and what desktop/main.js loads; electron-builder
+  copies it into the app as a resource.
+
+## App shells
+
+- Capacitor: `npm install` once, then `npm run android` / `npm run ios`
+  (= pack, cap sync, cap open). android/ and ios/ are Capacitor's
+  generated projects, committed as Capacitor recommends; they carry their
+  own .gitignore for build output. cap sync copies dist/www into
+  android/app/src/main/assets/public and ios/App/App/public (both
+  gitignored by the templates). App id com.tabulanis.warmachine.
+  webContentsDebuggingEnabled is false so the Android WebView is not
+  inspectable; iOS release builds are not inspectable by default.
+- Electron: desktop/main.js is the whole shell. devTools false,
+  contextIsolation, sandbox, no menu, window.open denied, navigation
+  blocked, browser shortcuts swallowed, F11 fullscreen. `WM_SMOKE=1`
+  makes it print whether the game booted and quit (used for automated
+  checks; on Linux as root add --no-sandbox). In dev it loads
+  ../dist/www/index.html; packaged, it loads www/index.html from
+  process.resourcesPath (extraResources in desktop/package.json).
+- No native icons or splash screens yet: both shells use the Capacitor /
+  Electron defaults. Add with @capacitor/assets when there is artwork.
 
 ## Layout
 

@@ -41,6 +41,48 @@ determined, and nothing that runs on the player's device can.
 `node pack.js --plain` writes the same single file with everything inlined
 in plain text, which is handy for debugging a shipped build.
 
+## App shells
+
+The game never runs in a visible browser for players. Two thin shells wrap
+the operating system's web engine around the WAD build, with no address
+bar, no devtools, no navigation and no new windows. The game code is the
+same in both; `node pack.js` is still the only build step for the game.
+
+### Phones (Capacitor): iOS and Android
+
+The native projects live in `android/` and `ios/` and are committed. One
+time, on your machine:
+
+```bash
+npm install                      # Capacitor CLI and platforms
+```
+
+Then, whenever the game changes:
+
+```bash
+npm run android                  # pack, sync, open in Android Studio
+npm run ios                      # pack, sync, open in Xcode
+```
+
+From Android Studio or Xcode you run on a device or build the store
+binary the normal way. Android needs Android Studio; iOS needs a Mac with
+Xcode and CocoaPods. App id is `com.tabulanis.warmachine`, set in
+`capacitor.config.json`. Remote debugging of the WebView is off there.
+
+### Desktop (Electron): Windows, macOS, Linux
+
+```bash
+cd desktop
+npm install                      # downloads Electron (~100 MB, once)
+npm start                        # run the game in its own window
+npm run dist                     # installers in desktop/out/
+```
+
+`desktop/main.js` is the whole shell: a locked-down window that loads the
+packed game. F11 toggles fullscreen. Installers come out about 150 MB
+because Chromium is inside them; that's the price of behaving identically
+everywhere.
+
 ## How it plays
 
 - **You advance through the castle bit by bit.** Travel stages walk you
@@ -83,7 +125,11 @@ src/
   input.js        pointer tracking → swipe segments
 vendor/
   three.js        Three.js (MIT) as one classic script defining `THREE`
-pack.js           builds dist/war-machine.html (WAD build, or --plain)
+pack.js           builds dist/war-machine.html + dist/www/ (WAD build, or --plain)
+package.json      Capacitor CLI + scripts (npm run android / ios / desktop)
+capacitor.config.json
+android/, ios/    Capacitor native projects (generated, committed)
+desktop/          Electron shell: main.js + package.json
 ```
 
 The scripts are plain (not ES modules) on purpose: browsers refuse to load

@@ -1,0 +1,18 @@
+{
+  "appId": "com.tabulanis.warmachine",
+  "appName": "War Machine",
+  "webDir": "dist/www",
+  "backgroundColor": "#07060a",
+  "android": {
+    "webContentsDebuggingEnabled": false,
+    "allowMixedContent": false,
+    "backgroundColor": "#07060a"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#07060a"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">War Machine</string>
+    <string name="title_activity_main">War Machine</string>
+    <string name="package_name">com.tabulanis.warmachine</string>
+    <string name="custom_url_scheme">com.tabulanis.warmachine</string>
+</resources>

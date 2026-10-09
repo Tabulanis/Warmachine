@@ -8,6 +8,7 @@
 // embedded as base64 in a small loader page that unpacks it in memory.
 //
 //   node pack.js                 -> dist/war-machine.html (WAD build)
+//                                   + dist/www/index.html (same, for the app shells)
 //   node pack.js --plain         -> dist/war-machine.html (everything inlined
 //                                   in plain text; handy for debugging)
 //   WM_KEY="your secret" node pack.js   use your own key instead of the
@@ -38,8 +39,10 @@ const body = indexHtml.match(/<body>([\s\S]*?)<\/body>/)[1]
   .replace(/<script[\s\S]*?<\/script>\s*/g, '')
   .replace(/<!--[\s\S]*?-->\s*/g, '');
 
-fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
+fs.mkdirSync(path.join(root, 'dist', 'www'), { recursive: true });
 const out = path.join(root, 'dist', 'war-machine.html');
+// The app shells (Capacitor, Electron) load dist/www/index.html: same file.
+const wwwOut = path.join(root, 'dist', 'www', 'index.html');
 
 // ---------------------------------------------------------- plain build
 
@@ -48,6 +51,7 @@ if (process.argv.includes('--plain')) {
   html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, (_, h) => `<style>\n${read(h)}\n</style>`);
   html = html.replace(/<script src="([^"]+)"><\/script>/g, (_, s) => `<script>\n${read(s).toString().replace(/<\/script/gi, '<\\/script')}\n</script>`);
   fs.writeFileSync(out, html);
+  fs.writeFileSync(wwwOut, html);
   console.log(`wrote ${path.relative(root, out)} (${(html.length / 1024).toFixed(0)} KB, plain)`);
   process.exit(0);
 }
@@ -139,4 +143,5 @@ const html = `<!doctype html>
 </html>
 `;
 fs.writeFileSync(out, html);
-console.log(`wrote ${path.relative(root, out)} (${(html.length / 1024).toFixed(0)} KB, WAD build: ${entries.length} files, ${(wad.length / 1024).toFixed(0)} KB raw -> ${(packed.length / 1024).toFixed(0)} KB packed)`);
+fs.writeFileSync(wwwOut, html);
+console.log(`wrote ${path.relative(root, out)} and dist/www/index.html (${(html.length / 1024).toFixed(0)} KB, WAD build: ${entries.length} files, ${(wad.length / 1024).toFixed(0)} KB raw -> ${(packed.length / 1024).toFixed(0)} KB packed)`);

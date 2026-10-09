@@ -1,0 +1,20 @@
+{
+  "name": "war-machine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "War Machine: Fruit Ninja meets Beat Saber in a haunted castle.",
+  "scripts": {
+    "build": "node pack.js",
+    "build:plain": "node pack.js --plain",
+    "sync": "node pack.js && cap sync",
+    "android": "node pack.js && cap sync android && cap open android",
+    "ios": "node pack.js && cap sync ios && cap open ios",
+    "desktop": "node pack.js && npm --prefix desktop start"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}

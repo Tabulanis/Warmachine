@@ -18,6 +18,9 @@ html, body {
   color: #f1ecdf;
   font-family: var(--font);
   overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #game, #fx {

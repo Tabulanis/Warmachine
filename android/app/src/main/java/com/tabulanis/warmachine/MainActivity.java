@@ -1,0 +1,5 @@
+package com.tabulanis.warmachine;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {}
