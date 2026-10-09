@@ -23,10 +23,10 @@ finger on a phone.
 
 ## How it plays
 
-- **You advance through the castle.** Travel stages walk you forward while
-  lighter waves attack. Fight stages stop you at a landmark (the castle
-  gates, the great hall, the throne room) until you have cut down enough
-  enemies, then it's onward.
+- **You advance through the castle bit by bit.** Travel stages walk you
+  forward while lighter waves attack. Fight stages stop you at a landmark
+  (the castle gates, the great hall door, the crypt stairs, the throne
+  room) until you have cut down enough enemies, then it's onward.
 - **Weapons** — switch with keys 1/2/3 or by tapping the icons.
   - **Sword**: clean cut, no cooldown.
   - **Morning Star**: slow, but smashes everything near the point of impact
@@ -39,14 +39,16 @@ finger on a phone.
     off and breaks your combo.
   - **Bats** (purple) — fast, small, worth more.
   - **Cursed skulls** (green) — never cut one. It costs a life.
-- Every enemy crosses the glowing **strike line** on the road exactly on a
-  beat. Cut it within a few frames of that moment for **PERFECT** (2x) or
-  **GREAT** (1.5x).
+- **Strike on the beat.** Any cut or smash that lands on a beat is
+  **PERFECT** and scores double, wherever the enemy is. Enemies cross the
+  glowing strike line on the road exactly on a beat, so that's the natural
+  moment, but you can also hold off and take an off-beat enemy on the next
+  beat.
 - Letting a skeleton, knight or bat reach you costs a life. Three lives.
 - Consecutive hits build a **combo**; every 8 hits raises the score
   multiplier, up to 4x.
-- Pick a tempo on the menu: **SQUIRE** 100 BPM, **KNIGHT** 125 BPM,
-  **WARLORD** 150 BPM. Faster beat, faster enemies.
+- Pick a tempo on the menu: **SQUIRE** 80 BPM, **KNIGHT** 90 BPM,
+  **WARLORD** 100 BPM. Faster beat, faster enemies.
 - Press **P** or **Esc** to pause. Best score is saved in the browser.
 
 ## Layout

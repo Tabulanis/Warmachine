@@ -17,8 +17,7 @@ const Z_MISS = 9;            // past the camera = they got you
 const CAMERA_HEIGHT = 2.0;
 const CAMERA_BACK = 7;       // camera sits this far behind the strike line
 const LANE_Y = [0.9, 3.0];
-const PERFECT_WINDOW = 0.09;
-const GREAT_WINDOW = 0.2;
+const PERFECT_WINDOW = 0.09;  // a strike within this many seconds of ANY beat is PERFECT
 const DIR_TOLERANCE = Math.PI / 4 + 0.15;
 const GRAVITY = 14;
 const SCALE = 1.35;          // enemies are built at unit-ish size, then scaled
@@ -52,15 +51,17 @@ const LEVELS = [
   { every: 4, beat: 1.0, eighth: 0.8,  sixteenth: 0.2,  knight: 0.45, skull: 0.35, bat: 0.4,  double: 0.4 },
 ];
 
-// The level. Travel stages walk you forward (lighter waves); fight stages
-// hold you at a landmark until you have cut down enough enemies.
+// The level, bit by bit. Travel stages walk you forward (lighter waves);
+// fight stages hold you at a landmark until you have cut down enough enemies.
 const STAGES = [
-  { name: 'THE ROAD',        kind: 'travel', theme: 'road',      length: 80, density: 0.45, level: 0 },
-  { name: 'THE CASTLE GATES',kind: 'fight',  landmark: 'gate',   kills: 12, level: 1 },
-  { name: 'THE COURTYARD',   kind: 'travel', theme: 'courtyard', length: 60, density: 0.6,  level: 2 },
-  { name: 'THE GREAT HALL',  kind: 'fight',  landmark: 'hall',   kills: 18, level: 3 },
-  { name: 'THE KEEP',        kind: 'travel', theme: 'hall',      length: 50, density: 0.8,  level: 4 },
-  { name: 'THE THRONE ROOM', kind: 'fight',  landmark: 'throne', kills: 26, level: 5 },
+  { name: 'THE ROAD',         kind: 'travel', theme: 'road',      length: 50, density: 0.5,  level: 0 },
+  { name: 'THE CASTLE GATES', kind: 'fight',  landmark: 'gate',   kills: 8,  level: 1 },
+  { name: 'THE COURTYARD',    kind: 'travel', theme: 'courtyard', length: 30, density: 0.6,  level: 1 },
+  { name: 'THE GREAT HALL',   kind: 'fight',  landmark: 'hall',   kills: 12, level: 2 },
+  { name: 'THE HALL',         kind: 'travel', theme: 'hall',      length: 30, density: 0.7,  level: 3 },
+  { name: 'THE CRYPT STAIRS', kind: 'fight',  landmark: 'crypt',  kills: 14, level: 3 },
+  { name: 'THE CRYPT',        kind: 'travel', theme: 'crypt',     length: 24, density: 0.8,  level: 4 },
+  { name: 'THE THRONE ROOM',  kind: 'fight',  landmark: 'throne', kills: 20, level: 5 },
 ];
 const LANDMARK_AHEAD = 14;   // landmarks sit this far past the stage boundary
 
@@ -367,6 +368,16 @@ export class Game {
         }
         box(w, M.stone, 20, 1.5, 8, 0, 10.5, -z - 4);                        // ceiling beam
       }
+    } else if (theme === 'crypt') {
+      // Low, close, candle-lit. Coffins along the walls.
+      for (let z = from; z < to; z += 6) {
+        for (const side of [-1, 1]) {
+          box(w, M.stoneDark, 2, 4, 6, side * 6, 2, -z - 3);
+          box(w, M.wood, 0.8, 0.6, 2.2, side * 4.6, 0.3, -z - 3 + rand(-1, 1));
+          if ((z - from) % 12 === 0) this.candle(side * 4.6, 0.75, -z - 3);
+        }
+        box(w, M.stoneDark, 14, 1, 6, 0, 4.5, -z - 3);                          // low ceiling
+      }
     }
   }
 
@@ -391,6 +402,17 @@ export class Game {
       box(w, M.stone, 14, 2.5, 2.5, 0, 12.5, z);
       box(w, M.stone, 60, 14, 2, 0, 7, z);
       box(w, M.ground, 8, 11, 2.2, 0, 5.5, z);
+    } else if (kind === 'crypt') {
+      // A sunken archway with steps down and skulls on the posts.
+      for (const side of [-1, 1]) {
+        box(w, M.stoneDark, 1.5, 6, 1.5, side * 4.5, 3, z);
+        sphere(w, M.bone, 0.35, side * 4.5, 6.3, z);
+        this.candle(side * 3.4, 0.2, z + 1.5);
+      }
+      box(w, M.stoneDark, 10.5, 1.5, 1.5, 0, 6.5, z);
+      for (let i = 0; i < 4; i++) box(w, M.stone, 8, 0.3, 1.2, 0, -0.15 - i * 0.3, z - 1 - i * 1.2);   // steps down
+      box(w, M.stoneDark, 60, 10, 2, 0, 5, z);
+      box(w, M.ground, 7.5, 6, 2.2, 0, 3, z);
     } else if (kind === 'throne') {
       box(w, M.stone, 10, 1, 6, 0, 0.5, z - 2);
       box(w, M.stone, 8, 1, 4, 0, 1.5, z - 3);
@@ -404,6 +426,15 @@ export class Game {
       }
       box(w, M.stone, 60, 16, 2, 0, 8, z - 7);                                   // back wall
     }
+  }
+
+  candle(x, y, z) {
+    cyl(this.world, M.bone, 0.08, 0.35, x, y + 0.17, z);
+    const flame = new THREE.Mesh(G.cone, M.flame);
+    flame.scale.set(0.16, 0.3, 0.16);
+    flame.position.set(x, y + 0.5, z);
+    this.world.add(flame);
+    this.torches.push({ flame, light: null, phase: Math.random() * 10, small: true });
   }
 
   torch(x, y, z) {
@@ -623,7 +654,7 @@ export class Game {
     this.beatLine.scale.y = 1 + pulse * 2;
     for (const tr of this.torches) {
       const flicker = 0.8 + Math.sin(t * 13 + tr.phase) * 0.12 + Math.sin(t * 29 + tr.phase * 2) * 0.08;
-      tr.flame.scale.y = 0.8 * flicker + pulse * 0.4;
+      tr.flame.scale.y = (tr.small ? 0.3 : 0.8) * flicker + pulse * (tr.small ? 0.1 : 0.4);
       if (tr.light) tr.light.intensity = 18 * flicker + pulse * 10;
     }
     if (this.dom.beatFill) this.dom.beatFill.style.transform = `scaleX(${1 - phase})`;
@@ -825,10 +856,12 @@ export class Game {
       this.sparks.burst(pos, e.def.color, 70, 9);
     }
 
-    const off = Math.abs(now - e.arrive);
+    // PERFECT is about the strike, not the enemy: land it on any beat and
+    // it counts, wherever the enemy happens to be.
+    const beatPos = now / this.beat.beatLen;
+    const off = Math.abs(beatPos - Math.round(beatPos)) * this.beat.beatLen;
     let label, timing, color;
     if (off <= PERFECT_WINDOW) { label = 'PERFECT'; timing = 2; color = '#ffd166'; this.beat.perfect(); }
-    else if (off <= GREAT_WINDOW) { label = 'GREAT'; timing = 1.5; color = '#b9c6ff'; }
     else { label = cut ? 'CUT' : 'SMASH'; timing = 1; color = '#ffffff'; }
     this.combo++;
     this.stageKills++;

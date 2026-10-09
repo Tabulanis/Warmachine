@@ -22,6 +22,13 @@ plain JavaScript, no build step.
   vibe; different weapons like a morning star and swords; it moves forward
   as you go: castle gates, big fight, move forward a bit, you can even move
   forward while it's going; Fruit Ninja stuff to kill things."
+- Owner's follow-up (2026-10-09): "like Fruit Ninja in a haunted house,
+  bit by bit; soundtrack 80 to 100 BPM; a perfect strike always happens on
+  a beat, and every strike that happens on a beat gets the whole PERFECT
+  and a better score." Done: tempos are 80/90/100; PERFECT is judged
+  against the beat grid (within PERFECT_WINDOW of any quarter-note beat),
+  not against the enemy's arrival; the GREAT tier is gone; the level is 8
+  shorter stages including a crypt.
 - The first version (neon tunnel, drones/missiles/mines) is commit d420b82
   if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
@@ -73,13 +80,15 @@ vendor/         Three.js
   since the first beat. Enemies get an `arrive` time on a 16th-note tick;
   their distance each frame is computed from the clock, not integrated, so
   they stay locked to the music.
-- Level: `STAGES` in `game.js`. Travel stages have a `theme` (road,
-  courtyard, hall) and `length`; the camera walks forward at TRAVEL_SPEED
-  and lighter waves spawn (`density`). Fight stages have a `landmark`
-  (gate, hall, throne) built LANDMARK_AHEAD units past the boundary and a
-  `kills` target; the camera holds until stageKills reaches it. Each stage
-  has a `level` into the LEVELS spawn table. After the last stage:
-  victory overlay ("THE CASTLE FALLS").
+- Level: `STAGES` in `game.js`, 8 stages: road, gates (fight), courtyard,
+  great hall door (fight), hall, crypt stairs (fight), crypt, throne room
+  (fight). Travel stages have a `theme` (road, courtyard, hall, crypt) and
+  `length`; the camera walks forward at TRAVEL_SPEED and lighter waves
+  spawn (`density`). Fight stages have a `landmark` (gate, hall, crypt,
+  throne) built LANDMARK_AHEAD units past the boundary and a `kills`
+  target; the camera holds until stageKills reaches it. Each stage has a
+  `level` into the LEVELS spawn table. After the last stage: victory
+  overlay ("THE CASTLE FALLS").
 - World coordinates: distance d along the level is world z = -d. Camera
   sits at z = CAMERA_BACK - progress; the strike line is CAMERA_BACK in
   front of it. Enemies store zRel (relative to the strike line) and are
@@ -95,8 +104,10 @@ vendor/         Three.js
   mult scales points; style 'slice' spawns halves, 'smash' (morning star)
   kills every enemy within `aoe` x projected radius of the hit, skulls
   included, and shakes the camera.
-- Timing: within 0.09 s of the arrive time = PERFECT (2x), within 0.2 s =
-  GREAT (1.5x). Combo adds +1 multiplier every 8 hits, max 4x.
+- Timing (owner's rule): a strike within PERFECT_WINDOW (0.09 s) of ANY
+  quarter-note beat is PERFECT (2x points) regardless of where the enemy
+  is; everything else is a plain CUT/SMASH (1x). Judged in kill() from
+  `now / beatLen`. Combo adds +1 multiplier every 8 hits, max 4x.
 - Halves: the swipe direction and view direction define a world-space cut
   plane. Two clones get a clipping plane each
   (`renderer.localClippingEnabled`), fly apart along the normal and spin
@@ -109,8 +120,8 @@ vendor/         Three.js
 
 ## Tuning knobs (all at the top of src/game.js)
 
-`Z_SPAWN`, `Z_MISS`, `LANE_Y`, `PERFECT_WINDOW`, `GREAT_WINDOW`,
-`DIR_TOLERANCE`, `SCALE`, `TRAVEL_SPEED`, `MAX_POINT_LIGHTS`, the
+`Z_SPAWN`, `Z_MISS`, `LANE_Y`, `PERFECT_WINDOW`, `DIR_TOLERANCE`,
+`SCALE`, `TRAVEL_SPEED`, `MAX_POINT_LIGHTS`, the
 `ENEMIES`, `WEAPONS`, `LEVELS` and `STAGES` tables, and the tempo buttons
 in `index.html` (`data-bpm`).
 
@@ -125,7 +136,8 @@ viewport: headless SwiftShader manages ~25 fps there but only ~5 fps at
 720p, and since enemies run on the audio clock a slow renderer just gets
 you killed. To eyeball a later stage: `g.progress = g.totalLength;
 g.enterStage(5)`. With nothing cut the run ends in a few seconds from
-three misses, so start swiping right after the count-in.
+three misses, so start swiping right after the count-in. To test PERFECT,
+wait for `(1 - g.beat.beatPhase()) * g.beat.beatLen` before swiping.
 
 ## Next ideas (not started, owner has not prioritised)
 
