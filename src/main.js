@@ -1,8 +1,7 @@
 // War Machine — entry point.
-// Everything is plain ES modules, no bundler. Serve the folder over HTTP
-// (see README) because browsers refuse to load modules from file://.
-import { Game } from './game.js';
-
+// Plain scripts, no modules, no bundler, no server: index.html works from a
+// double-click. Script order in index.html matters: three.js, beat.js,
+// input.js, game.js, then this.
 const canvas = document.getElementById('game');
 const game = new Game(canvas);
 game.run();

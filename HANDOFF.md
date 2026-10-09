@@ -10,7 +10,8 @@ night assault on a castle: skeletons, armoured knights, bats and cursed
 skulls come down a moonlit road in time with a synthesised gothic beat; the
 player swipes to cut them in half with a sword, morning star or whip, and
 advances through the castle gates, great hall and throne room. Three.js,
-plain JavaScript, no build step.
+plain JavaScript, no server, no build step: index.html runs from a
+double-click.
 
 ## Current state
 
@@ -29,6 +30,15 @@ plain JavaScript, no build step.
   against the beat grid (within PERFECT_WINDOW of any quarter-note beat),
   not against the enemy's arrival; the GREAT tier is gone; the level is 8
   shorter stages including a crypt.
+- Owner's deployment rule (2026-10-09): no server, as simple as possible
+  to deploy, this will go out on phones. Done: no ES modules anywhere.
+  Three.js is bundled once (esbuild, IIFE, global THREE) into
+  vendor/three.js and committed; the four game files are plain scripts
+  loaded in order by index.html. Verified from a file:// URL. `node
+  pack.js` inlines everything into dist/war-machine.html (gitignored) for
+  single-file sharing; that file is what to wrap (Capacitor or similar)
+  when it goes to app stores. The README's old "serve over HTTP" step is
+  gone.
 - The first version (neon tunnel, drones/missiles/mines) is commit d420b82
   if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
@@ -49,29 +59,33 @@ plain JavaScript, no build step.
 - Three.js for everything. Plain JavaScript ("Java" in the transcript
   meant JavaScript). Keep it super simple: no bundler, no npm, no
   framework.
-- Three.js is vendored (`vendor/three.module.js` + `three.core.js`,
-  v0.186.1, MIT) so the game runs offline. The jsDelivr/unpkg CDNs were
-  unreachable from the cloud container; npm registry was reachable.
+- Three.js v0.186.1 (MIT) is vendored as `vendor/three.js`, a classic
+  script built with `npx esbuild three.module.js --bundle --format=iife
+  --global-name=THREE --minify`. No CDN (they were unreachable from the
+  cloud container anyway; the npm registry was reachable).
 
 ## Run it
 
-```bash
-cd war-machine
-python3 -m http.server 8300     # any static server works
-# open http://localhost:8300
-```
+Double-click `index.html`. A static server also works but is not needed.
+`node pack.js` writes `dist/war-machine.html`, the single-file build.
 
 ## Layout
 
 ```
-index.html      page, HUD and menus (plain DOM)
+index.html      page, HUD and menus (plain DOM); loads the scripts in order
 styles.css
-src/main.js     boots the game, exposes window.warMachine for debugging
-src/game.js     Three.js scene, spawning, slicing, scoring, menus
-src/beat.js     Web Audio metronome + synth drums + sfx; the game clock
+src/beat.js     Web Audio metronome + synth drums/bass/arp + sfx; the clock
 src/input.js    pointer tracking -> swipe segments
-vendor/         Three.js
+src/game.js     Three.js scene, level, enemies, weapons, slicing, scoring
+src/main.js     boots the game, exposes window.warMachine for debugging
+vendor/three.js Three.js as one classic script (global THREE)
+pack.js         optional single-file packer -> dist/war-machine.html
 ```
+
+Script order matters (three, beat, input, game, main): top-level classes
+in classic scripts share one global lexical scope, so BeatClock and Input
+are visible to game.js without imports. Do not reintroduce `import` or
+`export`; that breaks file:// loading.
 
 ## How the core works (so you don't have to re-derive it)
 

@@ -6,7 +6,7 @@
 
 const TRAIL_LIFE = 140; // ms a trail point stays visible
 
-export class Input {
+class Input {
   constructor(canvas) {
     this.canvas = canvas;
     this.down = false;

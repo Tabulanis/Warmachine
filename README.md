@@ -5,21 +5,25 @@ armoured knights, bats and cursed skulls come at you down a moonlit road, in
 time with the beat. Swipe to cut them in half. Fight through the gates, the
 great hall and the throne room.
 
-Built with [Three.js](https://threejs.org/) and plain JavaScript. No build
-step, no npm install, no accounts. One HTML file, four small modules, and a
-vendored copy of Three.js.
+Built with [Three.js](https://threejs.org/) and plain JavaScript. No
+server, no build step, no npm install, no accounts. Everything runs in the
+browser: the game logic, the 3D rendering, and the music (synthesised with
+the Web Audio API). Best score is saved in the browser's local storage.
 
 ## Play it
 
-Browsers won't load ES modules from `file://`, so serve the folder over HTTP.
-Any static server works. From this folder:
+Double-click `index.html`. That's it. Works with a mouse, a trackpad, or a
+finger on a phone.
+
+To put it online, copy the folder to any static host (GitHub Pages, an S3
+bucket, a shared folder). To hand it to someone as a single file:
 
 ```bash
-python3 -m http.server 8300
+node pack.js          # writes dist/war-machine.html with everything inlined
 ```
 
-Then open **http://localhost:8300**. Works with a mouse, a trackpad, or a
-finger on a phone.
+That one file opens anywhere a browser does, and is the thing to wrap when
+the game goes to phones as an app.
 
 ## How it plays
 
@@ -62,8 +66,20 @@ src/
   beat.js         Web Audio metronome + synth drums/bass/arpeggio + sfx
   input.js        pointer tracking → swipe segments
 vendor/
-  three.module.js Three.js (MIT), pinned copy so it works offline
-  three.core.js
+  three.js        Three.js (MIT) as one classic script defining `THREE`
+pack.js           optional: inlines everything into dist/war-machine.html
+```
+
+The scripts are plain (not ES modules) on purpose: browsers refuse to load
+modules from `file://`, and plain scripts just work. `index.html` loads
+them in order and each file's top-level classes are visible to the next.
+
+`vendor/three.js` is Three.js r186 bundled once with esbuild into a
+single script. To upgrade it some day:
+
+```bash
+npx esbuild node_modules/three/build/three.module.js --bundle --format=iife \
+  --global-name=THREE --minify --outfile=vendor/three.js
 ```
 
 ## How it works

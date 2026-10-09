@@ -19,7 +19,7 @@ const ARP_ORDER = [0, 1, 2, 1, 0, 2, 1, 2];
 const TICKS_PER_BEAT = 4;   // we think in 16th notes
 const TICKS_PER_BAR = 16;
 
-export class BeatClock {
+class BeatClock {
   constructor() {
     this.ctx = null;
     this.master = null;

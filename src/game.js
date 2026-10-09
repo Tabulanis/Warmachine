@@ -4,10 +4,10 @@
 // through the gates, the great hall and into the throne room. Enemies come
 // at you on the beat; you swipe to cut them down with whichever weapon is
 // in hand. Kept in one file so the flow reads top to bottom.
+//
+// Classic script: expects the THREE global from vendor/three.js and the
+// BeatClock and Input classes from beat.js and input.js, loaded before it.
 
-import * as THREE from 'three';
-import { BeatClock } from './beat.js';
-import { Input } from './input.js';
 
 // --------------------------------------------------------------- tuning
 
@@ -244,7 +244,7 @@ class Sparks {
 
 // ----------------------------------------------------------------- game
 
-export class Game {
+class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.fx = document.getElementById('fx');

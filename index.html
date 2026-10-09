@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#07060a">
   <title>War Machine</title>
   <link rel="stylesheet" href="styles.css">
-  <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.js" } }
-  </script>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
   <canvas id="game" aria-label="War Machine"></canvas>
@@ -61,6 +61,11 @@
     <button id="again">AGAIN</button>
   </div>
 
-  <script type="module" src="src/main.js"></script>
+  <!-- Plain scripts in this order. No modules, so it runs from file:// too. -->
+  <script src="vendor/three.js"></script>
+  <script src="src/beat.js"></script>
+  <script src="src/input.js"></script>
+  <script src="src/game.js"></script>
+  <script src="src/main.js"></script>
 </body>
 </html>
