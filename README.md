@@ -48,6 +48,21 @@ the operating system's web engine around the WAD build, with no address
 bar, no devtools, no navigation and no new windows. The game code is the
 same in both; `node pack.js` is still the only build step for the game.
 
+### Icons and splash screens
+
+`resources/` holds the artwork: `emblem.svg` (a steel shield cut by an
+ember slash) and the PNGs rendered from it by `resources/render.js`
+(needs Playwright: `NODE_PATH=<playwright's node_modules> node
+resources/render.js`). The phone icons and splash screens in `android/`
+and `ios/` are generated from those by:
+
+```bash
+npx capacitor-assets generate --ios --android --iconBackgroundColor '#07060a' --splashBackgroundColor '#07060a'
+```
+
+The desktop icon is `desktop/build/icon.png`; electron-builder makes the
+platform formats from it.
+
 ### Phones (Capacitor): iOS and Android
 
 The native projects live in `android/` and `ios/` and are committed. One
@@ -101,6 +116,10 @@ everywhere.
     off and breaks your combo.
   - **Bats** (purple) — fast, small, worth more.
   - **Cursed skulls** (green) — never cut one. It costs a life.
+  - **The Castellan** waits on the throne: an armoured giant whose weak
+    point moves after every hit, and who hurls skulls every other bar.
+    Sixteen cuts along the weak point (or morning-star smashes) and the
+    castle falls.
 - **Strike on the beat.** Any cut or smash that lands on a beat is
   **PERFECT** and scores double, wherever the enemy is. Enemies cross the
   glowing strike line on the road exactly on a beat, so that's the natural
@@ -166,7 +185,6 @@ npx esbuild node_modules/three/build/three.module.js --bundle --format=iife \
 
 ## Ideas for later
 
-- A boss in the throne room.
 - Real songs: beat-detect an audio file and drive spawns from it.
 - Charted levels instead of the procedural ramp.
 - Bloom post-processing for proper torchlight.

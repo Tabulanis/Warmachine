@@ -61,8 +61,13 @@ const STAGES = [
   { name: 'THE HALL',         kind: 'travel', theme: 'hall',      length: 30, density: 0.7,  level: 3 },
   { name: 'THE CRYPT STAIRS', kind: 'fight',  landmark: 'crypt',  kills: 14, level: 3 },
   { name: 'THE CRYPT',        kind: 'travel', theme: 'crypt',     length: 24, density: 0.8,  level: 4 },
-  { name: 'THE THRONE ROOM',  kind: 'fight',  landmark: 'throne', kills: 20, level: 5 },
+  { name: 'THE THRONE ROOM',  kind: 'boss',   landmark: 'throne', hp: 16,    level: 4 },
 ];
+
+// The Castellan, lord of the castle. Fought at the throne: an armoured giant
+// whose weak point moves after every hit. Not in the enemies list, so he is
+// never "missed"; he just stands there until you have cut him enough.
+const BOSS = { name: 'THE CASTELLAN', color: 0xd9a441, css: '#ffd166', r: 1.25, armored: true, points: 40, beats: 4, scale: 2.4, volleyEvery: 2 };
 const LANDMARK_AHEAD = 14;   // landmarks sit this far past the stage boundary
 
 const STATE = { MENU: 'menu', PLAY: 'play', PAUSE: 'pause', OVER: 'over' };
@@ -181,6 +186,26 @@ function buildEnemy(type, dir) {
     sphere(g, M.eye, 0.04, 0.08, 0.05, 0.17);
     const wl = box(g, M.batWing, 0.7, 0.04, 0.35, -0.5, 0, 0); wl.name = 'wingL';
     const wr = box(g, M.batWing, 0.7, 0.04, 0.35, 0.5, 0, 0); wr.name = 'wingR';
+  } else if (type === 'boss') {
+    box(g, M.steelDark, 1.0, 1.2, 0.6, 0, 0, 0);
+    box(g, M.gold, 1.1, 0.14, 0.7, 0, 0.66, 0);                   // gilded pauldrons
+    box(g, M.carpet, 1.1, 1.5, 0.1, 0, -0.1, -0.36);               // cape
+    box(g, M.steelDark, 0.6, 0.6, 0.6, 0, 1.0, 0);                 // great helm
+    sphere(g, M.eye, 0.07, -0.14, 1.02, 0.3);
+    sphere(g, M.eye, 0.07, 0.14, 1.02, 0.3);
+    box(g, M.gold, 0.7, 0.12, 0.7, 0, 1.34, 0);                    // crown
+    for (let i = 0; i < 4; i++) box(g, M.gold, 0.1, 0.3, 0.1, -0.27 + i * 0.18, 1.52, 0.2);
+    box(g, M.steelDark, 0.3, 1.0, 0.3, -0.28, -1.1, 0);
+    box(g, M.steelDark, 0.3, 1.0, 0.3, 0.28, -1.1, 0);
+    box(g, M.steel, 0.9, 1.1, 0.14, -0.85, -0.1, 0.1);              // tower shield
+    const arrow = new THREE.Group();
+    const head = new THREE.Mesh(G.arrowHead, M.weak); head.position.y = 0.3; head.scale.setScalar(1.3);
+    const shaft = new THREE.Mesh(G.arrowShaft, M.weak); shaft.position.y = -0.1; shaft.scale.setScalar(1.3);
+    arrow.add(head, shaft);
+    arrow.position.z = 0.36;
+    arrow.rotation.z = dir - Math.PI / 2;
+    arrow.name = 'arrow';
+    g.add(arrow);
   } else {
     sphere(g, M.skull, 0.45, 0, 0.05, 0);
     sphere(g, M.skullDark, 0.1, -0.15, 0.1, 0.38);
@@ -254,6 +279,7 @@ class Game {
     this.state = STATE.MENU;
     this.best = Number(localStorage.getItem('warmachine.best') || 0);
     this.enemies = [];
+    this.boss = null;
     this.halves = [];
     this.torches = [];
     this.shake = 0;
@@ -460,6 +486,7 @@ class Game {
       stageName: $('stage-name'), stageGoal: $('stage-goal'), weapons: $('weapons'),
       progressFill: $('progress-fill'), beatFill: $('beat-fill'),
       banner: $('banner'), bannerTitle: $('banner-title'), bannerSub: $('banner-sub'),
+      boss: $('boss'), bossFill: $('boss-fill'), bossName: $('boss-name'),
       menu: $('menu'), pause: $('pause'), over: $('over'), overTitle: $('over-title'),
       final: $('final'), finalBest: $('final-best'), best: $('best'), again: $('again'),
     };
@@ -566,6 +593,7 @@ class Game {
 
   clearField() {
     for (const e of this.enemies) this.scene.remove(e.obj);
+    if (this.boss) { this.scene.remove(this.boss.obj); this.boss = null; }
     for (const h of this.halves) this.disposeHalf(h);
     this.enemies = [];
     this.halves = [];
@@ -581,10 +609,24 @@ class Game {
     this.stageIndex = i;
     this.stageKills = 0;
     const s = this.stage;
-    this.showBanner(s.name, s.kind === 'fight' ? `CUT DOWN ${s.kills}` : 'ONWARD');
+    this.showBanner(s.name, s.kind === 'fight' ? `CUT DOWN ${s.kills}` : s.kind === 'boss' ? `${BOSS.name} AWAKES` : 'ONWARD');
     this.dom.stageName.textContent = s.name;
-    if (s.kind === 'fight') this.beat.bell();
+    if (s.kind === 'fight' || s.kind === 'boss') this.beat.bell();
+    if (s.kind === 'boss') this.summonBoss(s);
     this.updateHUD();
+  }
+
+  summonBoss(s) {
+    const dir = pick(DIRS);
+    const obj = buildEnemy('boss', dir);
+    obj.scale.setScalar(BOSS.scale);
+    this.scene.add(obj);
+    this.boss = {
+      type: 'boss', def: BOSS, obj, dir, scale: BOSS.scale, isBoss: true,
+      hp: s.hp, maxHp: s.hp, x: 0, y: 3.3, zRel: -3,
+      punch: 0, flashUntil: 0, dead: false, bob: 0, arrive: 0,
+    };
+    this.dom.bossName.textContent = BOSS.name;
   }
 
   showBanner(title, sub) {
@@ -668,12 +710,24 @@ class Game {
     if (s.kind === 'travel') {
       this.progress = Math.min(s.start + s.length, this.progress + TRAVEL_SPEED * dt);
       if (this.progress >= s.start + s.length) this.enterStage(this.stageIndex + 1);
-    } else if (this.stageKills >= s.kills) {
+    } else if (s.kind === 'fight' && this.stageKills >= s.kills) {
       this.showBanner('ONWARD', '');
       this.beat.bell();
       this.enterStage(this.stageIndex + 1);
     }
     if (this.state !== STATE.PLAY) return;
+
+    // The boss paces the strike line and sways, so the weak point is never
+    // quite where it was.
+    const b = this.boss;
+    if (b && !b.dead) {
+      b.x = Math.sin(now * 0.8) * 1.8;
+      b.zRel = -3 + Math.sin(now * 0.5) * 1.2;
+      b.punch = Math.max(0, b.punch - dt * 4);
+      b.obj.position.set(b.x, b.y + Math.sin(now * 1.6) * 0.1, this.camZ - CAMERA_BACK + b.zRel);
+      b.obj.rotation.y = Math.sin(now * 0.8) * 0.25;
+      b.obj.scale.setScalar(b.scale * (1 + b.punch * 0.15));
+    }
     this.dom.progressFill.style.width = `${(this.progress / this.totalLength) * 100}%`;
 
     // Plan the chart far enough ahead that enemies exist before they are visible.
@@ -731,9 +785,12 @@ class Game {
     if (bar < 1) return; // one bar of count-in
     const s = this.stage;
     const L = LEVELS[Math.min(LEVELS.length - 1, s.level)];
-    const density = s.kind === 'fight' ? 1 : s.density;
+    const density = s.kind === 'fight' ? 1 : s.kind === 'boss' ? 0.5 : s.density;
     const arrive = this.beat.tickTime(tick);
     const spawns = [];
+    // The Castellan's volley: every other bar he hurls cursed skulls and
+    // loosens a bat, on the downbeat.
+    if (s.kind === 'boss' && inBar === 0 && bar % BOSS.volleyEvery === 0) spawns.push('skull', 'skull', 'bat');
     const roll = (p) => Math.random() < p * density;
     const main = () => (Math.random() < L.knight ? 'knight' : 'skeleton');
 
@@ -778,7 +835,7 @@ class Game {
     const W = window.innerWidth, H = window.innerHeight;
     const c = e.obj.position.clone().project(this.camera);
     const up = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1);
-    const edge = e.obj.position.clone().addScaledVector(up, e.def.r * SCALE).project(this.camera);
+    const edge = e.obj.position.clone().addScaledVector(up, e.def.r * (e.scale || SCALE)).project(this.camera);
     const sx = (c.x + 1) / 2 * W, sy = (1 - c.y) / 2 * H;
     const ex = (edge.x + 1) / 2 * W, ey = (1 - edge.y) / 2 * H;
     return { x: sx, y: sy, r: Math.hypot(ex - sx, ey - sy), behind: c.z > 1 };
@@ -786,14 +843,15 @@ class Game {
 
   slice(segs, now) {
     const weapon = WEAPONS[this.weapon];
-    const projected = this.enemies.map((e) => this.project(e));
+    const targets = this.boss && !this.boss.dead ? [...this.enemies, this.boss] : this.enemies;
+    const projected = targets.map((e) => this.project(e));
     for (const s of segs) {
       if (now < this.weaponReadyAt) return;
       const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
       const len = Math.hypot(dx, dy);
       if (len < 3) continue;
-      for (let i = 0; i < this.enemies.length; i++) {
-        const e = this.enemies[i];
+      for (let i = 0; i < targets.length; i++) {
+        const e = targets[i];
         const p = projected[i];
         if (e.dead || p.behind || now < e.flashUntil) continue;
         if (pointSegmentDistance(p.x, p.y, s.x1, s.y1, s.x2, s.y2) > p.r * weapon.reach) continue;
@@ -805,8 +863,8 @@ class Game {
         }
         if (weapon.style === 'smash') {
           // The morning star flattens everything near the point of impact.
-          for (let j = 0; j < this.enemies.length; j++) {
-            const o = this.enemies[j], q = projected[j];
+          for (let j = 0; j < targets.length; j++) {
+            const o = targets[j], q = projected[j];
             if (o.dead || q.behind) continue;
             if (Math.hypot(q.x - p.x, q.y - p.y) <= p.r * weapon.aoe) this.kill(o, now, q, weapon, null);
           }
@@ -824,6 +882,7 @@ class Game {
 
   kill(e, now, p, weapon, cut) {
     if (e.dead) return;
+    if (e.isBoss) { this.bossHit(e, now, p, weapon, cut); return; }
     e.dead = true;
     this.scene.remove(e.obj);
     const pos = e.obj.position.clone();
@@ -871,6 +930,49 @@ class Game {
     this.updateHUD();
   }
 
+  bossHit(b, now, p, weapon, cut) {
+    if (now < b.flashUntil) return;
+    b.hp--;
+    b.flashUntil = now + 0.35;
+    b.punch = 1;
+    b.dir = pick(DIRS);
+    b.obj.getObjectByName('arrow').rotation.z = b.dir - Math.PI / 2;
+    const pos = b.obj.position.clone();
+    this.sparks.burst(pos, BOSS.color, 40, 7);
+    this.beat.slice();
+    const beatPos = now / this.beat.beatLen;
+    const off = Math.abs(beatPos - Math.round(beatPos)) * this.beat.beatLen;
+    const perfect = off <= PERFECT_WINDOW;
+    if (perfect) this.beat.perfect();
+    this.combo++;
+    const pts = Math.round(BOSS.points * (perfect ? 2 : 1) * weapon.mult * this.multiplier);
+    this.score += pts;
+    this.floater(`${perfect ? 'PERFECT' : 'HIT'} +${pts}`, p.x, p.y, perfect ? '#ffd166' : '#ffffff');
+    this.updateHUD();
+    if (b.hp <= 0) this.bossDefeated(b, cut);
+  }
+
+  bossDefeated(b, cut) {
+    b.dead = true;
+    this.scene.remove(b.obj);
+    const pos = b.obj.position.clone();
+    if (cut) {
+      const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
+      const up = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1);
+      const swipe = right.multiplyScalar(cut.ndx).addScaledVector(up, -cut.ndy).normalize();
+      const view = this.camera.getWorldDirection(new THREE.Vector3());
+      this.spawnHalves(b, new THREE.Vector3().crossVectors(swipe, view).normalize());
+    }
+    this.sparks.burst(pos, BOSS.color, 160, 12);
+    this.sparks.burst(pos, 0xff9a3c, 80, 8);
+    this.shake = 1.2;
+    this.beat.explode();
+    this.beat.bell();
+    this.showBanner(`${BOSS.name} FALLS`, '');
+    this.updateHUD();
+    setTimeout(() => { if (this.state === STATE.PLAY) this.enterStage(this.stageIndex + 1); }, 1600);
+  }
+
   clang(e, now, p) {
     e.flashUntil = now + 0.4;
     e.punch = 1;
@@ -882,6 +984,7 @@ class Game {
   }
 
   miss(e) {
+    if (this.state !== STATE.PLAY) return;
     this.lives--;
     this.combo = 0;
     this.shake = Math.max(this.shake, 0.7);
@@ -897,6 +1000,7 @@ class Game {
 
   spawnHalves(e, normal) {
     const speed = (Z_SLICE - Z_SPAWN) / (e.def.beats * this.beat.beatLen);
+    const scale = e.scale || SCALE;
     for (const side of [1, -1]) {
       const obj = e.obj.clone(true);
       const plane = new THREE.Plane();
@@ -908,7 +1012,7 @@ class Game {
         m.material.side = THREE.DoubleSide;
         mats.push(m.material);
       });
-      obj.scale.setScalar(SCALE);
+      obj.scale.setScalar(scale);
       this.scene.add(obj);
       this.halves.push({
         obj, plane, mats, normal, side,
@@ -949,7 +1053,10 @@ class Game {
       ? `${this.combo}x COMBO${this.multiplier > 1 ? `<small>SCORE x${this.multiplier}</small>` : ''}`
       : '';
     const s = this.stage;
-    if (s) this.dom.stageGoal.textContent = s.kind === 'fight' ? `${Math.min(this.stageKills, s.kills)} / ${s.kills}` : 'ONWARD';
+    if (s) this.dom.stageGoal.textContent = s.kind === 'fight' ? `${Math.min(this.stageKills, s.kills)} / ${s.kills}` : s.kind === 'boss' ? BOSS.name : 'ONWARD';
+    const b = this.boss;
+    this.dom.boss.classList.toggle('hidden', !b || b.dead);
+    if (b) this.dom.bossFill.style.width = `${Math.max(0, b.hp / b.maxHp) * 100}%`;
   }
 
   floater(text, x, y, color) {

@@ -142,6 +142,22 @@ html, body {
 }
 #beat-fill { height: 100%; width: 100%; background: var(--ember); transform-origin: left; }
 
+/* Boss health */
+#boss {
+  position: absolute;
+  top: calc(max(16px, env(safe-area-inset-top)) + 13vh);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(70vw, 560px);
+  text-align: center;
+  font-size: clamp(12px, 2.2vh, 18px);
+  letter-spacing: 0.25em;
+  color: var(--gold);
+  text-shadow: 0 0 10px var(--gold);
+}
+#boss-bar { height: 8px; margin-top: 6px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,209,102,0.5); border-radius: 4px; overflow: hidden; }
+#boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--blood), var(--gold)); transition: width 0.15s ease-out; }
+
 /* Stage banner */
 #banner {
   position: fixed;
@@ -241,6 +257,7 @@ html, body {
 .legend .knight { background: var(--steel); color: var(--steel); }
 .legend .bat { background: #7a3fb0; color: #7a3fb0; transform: rotate(45deg); }
 .legend .skull { background: var(--curse); color: var(--curse); border-radius: 50%; }
+.legend .boss { background: var(--gold); color: var(--gold); clip-path: polygon(50% 0, 100% 35%, 80% 100%, 20% 100%, 0 35%); }
 .hint { margin: 14px 0 0; opacity: 0.6; max-width: 760px; line-height: 1.4; }
 #final { font-size: clamp(28px, 7vh, 56px); font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
 #again { margin-top: 24px; }

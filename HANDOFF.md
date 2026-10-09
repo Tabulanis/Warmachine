@@ -58,6 +58,10 @@ double-click.
   has no Android SDK and no Xcode. The owner builds those on their
   machine (see README "App shells"). First thing to check there:
   `npm run android` opens Android Studio and the app runs on a device.
+- Owner (2026-10-09): "Okay get to it." Done: icons and splash screens for
+  all shells (resources/emblem.svg -> render.js -> PNGs ->
+  capacitor-assets; desktop/build/icon.png), and the throne-room boss,
+  The Castellan (stage kind 'boss', BOSS table in game.js).
 - The first version (neon tunnel, drones/missiles/mines) is commit d420b82
   if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
@@ -132,8 +136,14 @@ pack.js with no dependencies (Node 18+):
   checks; on Linux as root add --no-sandbox). In dev it loads
   ../dist/www/index.html; packaged, it loads www/index.html from
   process.resourcesPath (extraResources in desktop/package.json).
-- No native icons or splash screens yet: both shells use the Capacitor /
-  Electron defaults. Add with @capacitor/assets when there is artwork.
+- Icons and splash: resources/emblem.svg is the source (shield + ember
+  slash). resources/render.js (Playwright) renders icon-only,
+  icon-foreground (adaptive safe zone), icon-background, splash and
+  splash-dark PNGs plus desktop/build/icon.png. `npx capacitor-assets
+  generate --ios --android --iconBackgroundColor '#07060a'
+  --splashBackgroundColor '#07060a'` writes all platform sizes into
+  android/ and ios/ (committed, ~22 MB, mostly splash PNGs). Do not pass
+  --pwa: it looks for www/manifest.json and fails.
 
 ## Layout
 
@@ -179,6 +189,21 @@ are visible to game.js without imports. Do not reintroduce `import` or
   (fast: 2.5 beats approach), skull (cursed: cutting it costs a life).
   Each is a Group of primitives from buildEnemy(); named parts are
   animated in animateEnemy().
+- Boss (`BOSS`, stage kind 'boss', last stage): summonBoss() builds a big
+  knight (scale 2.4) held in `this.boss`, not in `enemies`, so it is
+  never missed. It paces the strike line (x sways, zRel -3 +/- 1.2). It
+  is armored: a cut must follow its arrow unless the weapon has `armor`
+  (morning star). bossHit(): hp--, 0.35 s invulnerable, arrow re-rolls
+  (getObjectByName('arrow')), 40 pts x PERFECT x weapon x combo. During
+  the boss, normal spawns run at density 0.5 and every BOSS.volleyEvery
+  bars the downbeat adds skull, skull, bat. bossDefeated(): halves if the
+  killing blow was a cut, big sparks, shake, banner, then enterStage(next)
+  after 1.6 s, which is the victory overlay. HUD: #boss bar (gold/blood
+  gradient) shown while the boss lives. project()/spawnHalves() use
+  `e.scale || SCALE` so the boss's size is respected.
+- The fight-stage kill-count advance is guarded with kind === 'fight' so
+  the boss stage only ends through bossDefeated(). miss() is a no-op
+  once the run is over, so lives never go below zero.
 - Weapons (`WEAPONS`): reach multiplies the hit radius; cooldown gates
   hits (weaponReadyAt on the beat clock); armor ignores the knight arrow;
   mult scales points; style 'slice' spawns halves, 'smash' (morning star)
@@ -221,7 +246,6 @@ wait for `(1 - g.beat.beatPhase()) * g.beat.beatLen` before swiping.
 
 ## Next ideas (not started, owner has not prioritised)
 
-- A boss in the throne room (the throne is built, nobody sits on it).
 - More weapons: axe, holy water, throwing daggers.
 - Real songs: beat-detect an audio file and spawn from it.
 - Charted levels instead of the procedural ramp.
