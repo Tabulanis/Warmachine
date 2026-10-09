@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#06070c">
+  <meta name="theme-color" content="#07060a">
   <title>War Machine</title>
   <link rel="stylesheet" href="styles.css">
   <script type="importmap">
@@ -12,29 +12,40 @@
 </head>
 <body>
   <canvas id="game" aria-label="War Machine"></canvas>
+  <canvas id="fx" aria-hidden="true"></canvas>
 
   <!-- HUD lives in plain DOM: far simpler than drawing text in WebGL. -->
   <div id="hud" class="hidden">
     <div id="score">000000</div>
-    <div id="lives"><span>◆</span><span>◆</span><span>◆</span></div>
+    <div id="lives"><span>♥</span><span>♥</span><span>♥</span></div>
     <div id="combo"></div>
+    <div id="stage"><span id="stage-name"></span><span id="stage-goal"></span></div>
+    <div id="weapons">
+      <button data-weapon="sword"><b>1</b>SWORD</button>
+      <button data-weapon="flail"><b>2</b>MORNING STAR</button>
+      <button data-weapon="whip"><b>3</b>WHIP</button>
+    </div>
+    <div id="progress"><div id="progress-fill"></div></div>
     <div id="beat"><div id="beat-fill"></div></div>
   </div>
+  <div id="banner" class="hidden"><div id="banner-title"></div><div id="banner-sub"></div></div>
 
   <div id="menu" class="overlay">
     <h1>WAR MACHINE</h1>
-    <p class="tagline">Slice to the beat</p>
+    <p class="tagline">A night at the castle</p>
     <div class="buttons">
-      <button data-bpm="100" data-name="RECRUIT">RECRUIT<small>100 BPM</small></button>
-      <button data-bpm="125" data-name="SOLDIER">SOLDIER<small>125 BPM</small></button>
+      <button data-bpm="100" data-name="SQUIRE">SQUIRE<small>100 BPM</small></button>
+      <button data-bpm="125" data-name="KNIGHT">KNIGHT<small>125 BPM</small></button>
       <button data-bpm="150" data-name="WARLORD">WARLORD<small>150 BPM</small></button>
     </div>
     <ul class="legend">
-      <li><i class="drone"></i>Swipe through drones</li>
-      <li><i class="missile"></i>Swipe missiles <b>along their arrow</b></li>
-      <li><i class="mine"></i>Never touch a mine</li>
+      <li><i class="skeleton"></i>Cut skeletons any way you like</li>
+      <li><i class="knight"></i>Cut knights <b>along the glowing weak point</b></li>
+      <li><i class="bat"></i>Bats are fast and worth more</li>
+      <li><i class="skull"></i>Never cut a cursed skull</li>
     </ul>
-    <p class="hint">Slice right on the beat for PERFECT · P to pause</p>
+    <p class="hint">Weapons: <b>1</b> Sword · <b>2</b> Morning Star smashes through armour · <b>3</b> Whip reaches further</p>
+    <p class="hint">Cut on the beat for PERFECT · Fight through the gates, the hall and the throne room · P to pause</p>
     <p id="best" class="hint"></p>
   </div>
 
@@ -44,7 +55,7 @@
   </div>
 
   <div id="over" class="overlay hidden">
-    <h2>WAR MACHINE DOWN</h2>
+    <h2 id="over-title">YOU HAVE FALLEN</h2>
     <p id="final"></p>
     <p id="final-best" class="hint"></p>
     <button id="again">AGAIN</button>

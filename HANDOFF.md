@@ -1,19 +1,29 @@
 # War Machine — running handoff
 
 Kept current so work can resume from any fresh session. Updated with every
-commit. Last updated: 2026-10-07.
+commit. Last updated: 2026-10-09.
 
 ## What this is
 
-A browser game: Fruit Ninja meets Beat Saber. Drones, missiles and mines
-fly down a neon tunnel in time with a synthesised beat; the player swipes
-to slice them in half. Three.js, plain JavaScript, no build step.
+A browser game: Fruit Ninja meets Beat Saber, Castlevania flavoured. A
+night assault on a castle: skeletons, armoured knights, bats and cursed
+skulls come down a moonlit road in time with a synthesised gothic beat; the
+player swipes to cut them in half with a sword, morning star or whip, and
+advances through the castle gates, great hall and throne room. Three.js,
+plain JavaScript, no build step.
 
 ## Current state
 
-- Fully playable first version. Menu, three tempos, gameplay, pause,
-  game over, saved best score. Verified in headless Chromium with no
-  console errors.
+- Second version, the medieval rework, is in and playable: level with 6
+  stages (3 travel, 3 fight), 4 enemy types, 3 weapons, stage banners,
+  progress bar, blade trail overlay, victory screen. Verified in headless
+  Chromium with no console errors: road -> gate fight cleared -> courtyard.
+- Owner's pitch for this version (2026-10-09): "Middle Ages, Castlevania
+  vibe; different weapons like a morning star and swords; it moves forward
+  as you go: castle gates, big fight, move forward a bit, you can even move
+  forward while it's going; Fruit Ninja stuff to kill things."
+- The first version (neon tunnel, drones/missiles/mines) is commit d420b82
+  if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
   `main`. This is the source of truth. Start new sessions with this repo
   selected.
@@ -58,43 +68,70 @@ vendor/         Three.js
 
 ## How the core works (so you don't have to re-derive it)
 
-- `beat.js` schedules kick/snare/hat on the AudioContext clock. `now()`
-  is seconds since the first beat. Targets get an `arrive` time on a
-  16th-note tick; their z position each frame is computed from the clock,
-  not integrated, so they stay locked to the music.
-- Targets spawn at z=-55 and cross the beat line at z=0 four beats later.
-  Past z=9 a drone/missile counts as missed (one life). Three lives.
-- Slicing: every pointer move while held becomes a segment. Each target is
-  projected to screen space; a segment within the projected radius is a
-  hit. Missiles also require the swipe angle to be within ~50 degrees of
-  their arrow. Mines: slicing one costs a life.
+- `beat.js` schedules kick/snare/hat plus a bass line and arpeggio over a
+  4-bar Am-F-G-E progression on the AudioContext clock. `now()` is seconds
+  since the first beat. Enemies get an `arrive` time on a 16th-note tick;
+  their distance each frame is computed from the clock, not integrated, so
+  they stay locked to the music.
+- Level: `STAGES` in `game.js`. Travel stages have a `theme` (road,
+  courtyard, hall) and `length`; the camera walks forward at TRAVEL_SPEED
+  and lighter waves spawn (`density`). Fight stages have a `landmark`
+  (gate, hall, throne) built LANDMARK_AHEAD units past the boundary and a
+  `kills` target; the camera holds until stageKills reaches it. Each stage
+  has a `level` into the LEVELS spawn table. After the last stage:
+  victory overlay ("THE CASTLE FALLS").
+- World coordinates: distance d along the level is world z = -d. Camera
+  sits at z = CAMERA_BACK - progress; the strike line is CAMERA_BACK in
+  front of it. Enemies store zRel (relative to the strike line) and are
+  placed at strike + zRel each frame, so they always approach the player
+  whether or not the camera is moving. Scenery is built once at start.
+- Enemies (`ENEMIES`): skeleton (any cut), knight (armored: cut must be
+  within DIR_TOLERANCE of its arrow unless the weapon has `armor`), bat
+  (fast: 2.5 beats approach), skull (cursed: cutting it costs a life).
+  Each is a Group of primitives from buildEnemy(); named parts are
+  animated in animateEnemy().
+- Weapons (`WEAPONS`): reach multiplies the hit radius; cooldown gates
+  hits (weaponReadyAt on the beat clock); armor ignores the knight arrow;
+  mult scales points; style 'slice' spawns halves, 'smash' (morning star)
+  kills every enemy within `aoe` x projected radius of the hit, skulls
+  included, and shakes the camera.
 - Timing: within 0.09 s of the arrive time = PERFECT (2x), within 0.2 s =
   GREAT (1.5x). Combo adds +1 multiplier every 8 hits, max 4x.
 - Halves: the swipe direction and view direction define a world-space cut
-  plane. Two clones of the target get a clipping plane each
+  plane. Two clones get a clipping plane each
   (`renderer.localClippingEnabled`), fly apart along the normal and spin
   about it. The plane is re-anchored to each piece's centre every frame.
-- Difficulty: `LEVELS` table in `game.js`, one level per 4 bars.
+- Blade trail: drawn on the 2D `#fx` canvas over the WebGL canvas, in the
+  weapon's colour, dimmed while the weapon is on cooldown.
+- Materials are MeshLambert on purpose: with 5 point lights (torches) the
+  PBR material was fill-rate heavy. Point lights are capped at
+  MAX_POINT_LIGHTS; later torches only glow.
 
 ## Tuning knobs (all at the top of src/game.js)
 
-`Z_SPAWN`, `Z_MISS`, `APPROACH_BEATS`, `LANE_Y`, `PERFECT_WINDOW`,
-`GREAT_WINDOW`, `DIR_TOLERANCE`, `TARGET_SCALE`, `LEVELS`, and the
-tempo buttons in `index.html` (`data-bpm`).
+`Z_SPAWN`, `Z_MISS`, `LANE_Y`, `PERFECT_WINDOW`, `GREAT_WINDOW`,
+`DIR_TOLERANCE`, `SCALE`, `TRAVEL_SPEED`, `MAX_POINT_LIGHTS`, the
+`ENEMIES`, `WEAPONS`, `LEVELS` and `STAGES` tables, and the tempo buttons
+in `index.html` (`data-bpm`).
 
 ## Testing
 
 A Playwright script was used in the cloud session (not committed): load
-the page, click SOLDIER, wait ~1.2 s for the count-in, then read
-`window.warMachine.targets`, project them with
-`warMachine.projectTarget(t)`, and drive `page.mouse` across each one.
-Score, halves, pause (`p` key), game over and localStorage best were all
-checked. Note: with nothing sliced the run ends in ~4 s from three misses,
-so start swiping right after the count-in.
+the page, click a tempo button, wait ~1 s for the count-in, then read
+`window.warMachine.enemies` (those with zRel between -10 and 5), project
+them with `warMachine.project(e)`, and drive `page.mouse` across each one
+(along `e.dir` for knights). Keys 1/2/3 switch weapons. Use a 640x360
+viewport: headless SwiftShader manages ~25 fps there but only ~5 fps at
+720p, and since enemies run on the audio clock a slow renderer just gets
+you killed. To eyeball a later stage: `g.progress = g.totalLength;
+g.enterStage(5)`. With nothing cut the run ends in a few seconds from
+three misses, so start swiping right after the count-in.
 
 ## Next ideas (not started, owner has not prioritised)
 
+- A boss in the throne room (the throne is built, nobody sits on it).
+- More weapons: axe, holy water, throwing daggers.
 - Real songs: beat-detect an audio file and spawn from it.
 - Charted levels instead of the procedural ramp.
-- Bloom post-processing for proper neon.
-- Two-colour targets for left/right hand on touch screens.
+- Bloom post-processing for proper torchlight.
+- Difficulty tuning after real play: TRAVEL_SPEED, kill counts, bat speed.

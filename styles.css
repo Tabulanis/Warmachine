@@ -1,10 +1,12 @@
 :root {
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --cyan: #45d0ff;
-  --orange: #ffa033;
-  --red: #ff3a5e;
-  --green: #5cf0a8;
+  --font: Georgia, "Times New Roman", "Palatino Linotype", serif;
+  --bone: #e8e4d0;
+  --steel: #aab4c6;
+  --ember: #ff9a3c;
+  --blood: #d7263d;
+  --curse: #5cff8a;
   --gold: #ffd166;
+  --moon: #b9c6ff;
 }
 
 html, body {
@@ -12,22 +14,27 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #06070c;
-  color: #fff;
+  background: #07060a;
+  color: #f1ecdf;
   font-family: var(--font);
   overscroll-behavior: none;
 }
 
-#game {
+#game, #fx {
+  position: fixed;
+  inset: 0;
   display: block;
   width: 100vw;
   height: 100vh;
+}
+#game {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   cursor: crosshair;
 }
+#fx { pointer-events: none; }
 
 .hidden { display: none !important; }
 
@@ -37,21 +44,22 @@ html, body {
   inset: 0;
   pointer-events: none;
   padding: max(16px, env(safe-area-inset-top)) 20px;
-  font-weight: 900;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 #score {
   font-size: clamp(28px, 6vh, 48px);
-  text-shadow: 0 0 14px rgba(120, 200, 255, 0.8);
+  text-shadow: 0 0 14px rgba(255, 154, 60, 0.7);
   font-variant-numeric: tabular-nums;
 }
 #lives {
   position: absolute;
   top: max(16px, env(safe-area-inset-top));
   right: 20px;
-  font-size: clamp(20px, 4vh, 32px);
-  letter-spacing: 6px;
+  font-size: clamp(22px, 4.5vh, 34px);
+  letter-spacing: 4px;
 }
-#lives span { color: var(--green); text-shadow: 0 0 10px var(--green); }
+#lives span { color: var(--blood); text-shadow: 0 0 10px var(--blood); }
 #lives span.off { color: rgba(255,255,255,0.15); text-shadow: none; }
 #combo {
   position: absolute;
@@ -64,32 +72,106 @@ html, body {
   line-height: 1.2;
 }
 #combo small { display: block; font-size: 0.55em; opacity: 0.8; }
+#stage {
+  position: absolute;
+  top: calc(max(16px, env(safe-area-inset-top)) + 7.5vh);
+  left: 20px;
+  font-size: clamp(14px, 2.4vh, 20px);
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+#stage span { display: block; }
+#stage-goal { color: var(--ember); font-variant-numeric: tabular-nums; }
+
+#weapons {
+  position: absolute;
+  bottom: max(44px, calc(env(safe-area-inset-bottom) + 30px));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+#weapons button {
+  font: inherit;
+  font-size: clamp(11px, 1.8vh, 14px);
+  letter-spacing: 0.08em;
+  color: rgba(241,236,223,0.65);
+  background: rgba(10, 8, 14, 0.6);
+  border: 1px solid rgba(241,236,223,0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  min-width: 84px;
+  touch-action: manipulation;
+}
+#weapons button b { display: block; font-size: 1.3em; color: rgba(255,255,255,0.4); }
+#weapons button.active {
+  color: #fff;
+  border-color: var(--ember);
+  box-shadow: 0 0 14px rgba(255,154,60,0.5), inset 0 0 10px rgba(255,154,60,0.15);
+}
+#weapons button.active b { color: var(--ember); }
+#weapons button.cooling { opacity: 0.5; }
+
+#progress {
+  position: absolute;
+  bottom: max(28px, calc(env(safe-area-inset-bottom) + 14px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(60vw, 480px);
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+}
+#progress-fill { height: 100%; width: 0; background: var(--steel); border-radius: 2px; transition: width 0.2s linear; }
+
 #beat {
   position: absolute;
   bottom: max(18px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: min(40vw, 320px);
-  height: 6px;
-  background: rgba(255,255,255,0.12);
+  height: 5px;
+  background: rgba(255,255,255,0.1);
   border-radius: 3px;
   overflow: hidden;
 }
-#beat-fill {
-  height: 100%;
-  width: 100%;
-  background: rgba(160, 140, 255, 0.9);
-  transform-origin: left;
+#beat-fill { height: 100%; width: 100%; background: var(--ember); transform-origin: left; }
+
+/* Stage banner */
+#banner {
+  position: fixed;
+  top: 28%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  animation: banner 2.6s ease-out forwards;
+}
+#banner-title {
+  font-size: clamp(30px, 8vw, 72px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 24px rgba(255,154,60,0.8), 0 2px 0 #000;
+}
+#banner-sub { font-size: clamp(14px, 2.6vh, 22px); opacity: 0.8; letter-spacing: 0.2em; margin-top: 6px; }
+@keyframes banner {
+  0%   { opacity: 0; transform: scale(0.9); }
+  12%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
 }
 
 /* Floating hit text (PERFECT / GREAT / MISS) */
 .floater {
   position: fixed;
   pointer-events: none;
-  font-weight: 900;
+  font-weight: 700;
   font-size: clamp(16px, 3.4vh, 28px);
+  letter-spacing: 0.06em;
   transform: translate(-50%, -50%);
-  text-shadow: 0 0 12px currentColor;
+  text-shadow: 0 0 12px currentColor, 0 1px 0 #000;
   animation: floatUp 0.8s ease-out forwards;
 }
 @keyframes floatUp {
@@ -107,48 +189,55 @@ html, body {
   justify-content: center;
   text-align: center;
   padding: 24px;
-  background: rgba(4, 5, 12, 0.55);
+  background: rgba(5, 4, 8, 0.6);
   backdrop-filter: blur(2px);
+  overflow-y: auto;
 }
+/* Let the overlay scroll instead of clipping its top on short screens. */
+.overlay > :first-child { margin-top: auto; }
+.overlay > :last-child { margin-bottom: auto; }
 .overlay h1 {
   margin: 0;
-  font-size: clamp(40px, 12vw, 110px);
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  text-shadow: 0 0 30px rgba(120, 160, 255, 0.9);
-  animation: pulse 0.5s ease-out infinite alternate;
+  font-size: clamp(36px, min(12vw, 15vh), 110px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 30px rgba(255, 154, 60, 0.8), 0 3px 0 #000;
+  animation: pulse 0.6s ease-out infinite alternate;
 }
-@keyframes pulse { from { text-shadow: 0 0 20px rgba(120,160,255,0.6); } to { text-shadow: 0 0 44px rgba(120,160,255,1); } }
+@keyframes pulse { from { text-shadow: 0 0 20px rgba(255,154,60,0.5), 0 3px 0 #000; } to { text-shadow: 0 0 44px rgba(255,154,60,1), 0 3px 0 #000; } }
 .overlay h2 {
   margin: 0 0 12px;
   font-size: clamp(28px, 7vw, 64px);
-  font-weight: 900;
-  text-shadow: 0 0 24px rgba(255, 58, 94, 0.8);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 24px rgba(215, 38, 61, 0.8), 0 2px 0 #000;
 }
+.overlay h2.win { text-shadow: 0 0 24px rgba(255, 209, 102, 0.9), 0 2px 0 #000; }
 .tagline { margin: 4px 0 28px; opacity: 0.7; letter-spacing: 0.3em; text-transform: uppercase; }
 .buttons { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 .overlay button {
   font: inherit;
-  font-weight: 900;
+  font-weight: 700;
   font-size: clamp(16px, 2.6vh, 22px);
-  color: #fff;
-  background: rgba(255,255,255,0.08);
-  border: 2px solid rgba(255,255,255,0.6);
-  border-radius: 12px;
+  color: #f1ecdf;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(241,236,223,0.5);
+  border-radius: 6px;
   padding: 14px 26px;
   min-width: 150px;
   cursor: pointer;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
 }
-.overlay button small { display: block; font-weight: 600; font-size: 0.6em; opacity: 0.65; margin-top: 4px; }
-.overlay button:hover, .overlay button:focus-visible { background: rgba(120,160,255,0.35); outline: none; }
+.overlay button small { display: block; font-weight: 400; font-size: 0.6em; opacity: 0.65; margin-top: 4px; letter-spacing: 0.1em; }
+.overlay button:hover, .overlay button:focus-visible { background: rgba(255,154,60,0.25); border-color: var(--ember); outline: none; }
 .overlay button:active { transform: scale(0.97); }
-.legend { list-style: none; padding: 0; margin: 34px 0 0; display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; opacity: 0.85; }
-.legend li { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-.legend i { width: 18px; height: 18px; border-radius: 4px; display: inline-block; box-shadow: 0 0 10px currentColor; }
-.legend .drone { background: var(--cyan); color: var(--cyan); transform: rotate(45deg); }
-.legend .missile { background: var(--orange); color: var(--orange); }
-.legend .mine { background: var(--red); color: var(--red); border-radius: 50%; }
-.hint { margin: 18px 0 0; opacity: 0.55; font-weight: 600; }
-#final { font-size: clamp(28px, 7vh, 56px); font-weight: 900; margin: 0; font-variant-numeric: tabular-nums; }
+.legend { list-style: none; padding: 0; margin: 24px 0 0; display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; opacity: 0.9; max-width: 900px; }
+.legend li { display: flex; align-items: center; gap: 10px; }
+.legend i { width: 16px; height: 16px; border-radius: 3px; display: inline-block; box-shadow: 0 0 10px currentColor; }
+.legend .skeleton { background: var(--bone); color: var(--bone); }
+.legend .knight { background: var(--steel); color: var(--steel); }
+.legend .bat { background: #7a3fb0; color: #7a3fb0; transform: rotate(45deg); }
+.legend .skull { background: var(--curse); color: var(--curse); border-radius: 50%; }
+.hint { margin: 14px 0 0; opacity: 0.6; max-width: 760px; line-height: 1.4; }
+#final { font-size: clamp(28px, 7vh, 56px); font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
 #again { margin-top: 24px; }

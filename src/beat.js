@@ -6,6 +6,16 @@
 // slice timing is judged against the same clock.
 
 const LOOKAHEAD = 0.2;      // seconds of drum hits scheduled ahead of time
+
+// A four-bar minor progression (Am, F, G, E): bass note plus a three-note
+// arpeggio per bar. Frequencies in Hz.
+const PROGRESSION = [
+  { bass: 55.0, arp: [220.0, 261.6, 329.6] },   // A minor
+  { bass: 43.7, arp: [174.6, 220.0, 261.6] },   // F major
+  { bass: 49.0, arp: [196.0, 246.9, 293.7] },   // G major
+  { bass: 41.2, arp: [164.8, 207.7, 246.9] },   // E major
+];
+const ARP_ORDER = [0, 1, 2, 1, 0, 2, 1, 2];
 const TICKS_PER_BEAT = 4;   // we think in 16th notes
 const TICKS_PER_BAR = 16;
 
@@ -77,10 +87,14 @@ export class BeatClock {
     while (this.startTime + this.tickTime(this.nextTick) < horizon) {
       const t = this.startTime + this.tickTime(this.nextTick);
       const inBar = this.nextTick % TICKS_PER_BAR;
+      const bar = Math.floor(this.nextTick / TICKS_PER_BAR);
+      const chord = PROGRESSION[bar % PROGRESSION.length];
       if (inBar % 4 === 0) this.kick(t, inBar === 0 ? 1 : 0.85);
       if (inBar === 4 || inBar === 12) this.snare(t);
       if (inBar % 2 === 0) this.hat(t, inBar % 4 === 0 ? 0.22 : 0.1);
       if (inBar === 14) this.hat(t + this.tickLen * 0.5, 0.08);
+      if (inBar % 4 === 0) this.bass(t, chord.bass, inBar === 0 ? 0.5 : 0.38);
+      if (inBar % 2 === 0) this.pluck(t, chord.arp[ARP_ORDER[(inBar / 2) % ARP_ORDER.length]]);
       this.nextTick++;
     }
   }
@@ -152,7 +166,106 @@ export class BeatClock {
     src.stop(t + 0.06);
   }
 
+  bass(t, freq, vol) {
+    const c = this.ctx;
+    const osc = c.createOscillator();
+    const sub = c.createOscillator();
+    const g = c.createGain();
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(600, t);
+    lp.frequency.exponentialRampToValueAtTime(120, t + 0.3);
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq * 2;
+    sub.type = 'sine';
+    sub.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(lp);
+    sub.connect(lp);
+    lp.connect(g).connect(this.master);
+    osc.start(t); sub.start(t);
+    osc.stop(t + 0.4); sub.stop(t + 0.4);
+  }
+
+  pluck(t, freq) {
+    // Short, bright, harpsichord-ish note.
+    const c = this.ctx;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(3200, t);
+    lp.frequency.exponentialRampToValueAtTime(500, t + 0.18);
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.07, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    osc.connect(lp).connect(g).connect(this.master);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  }
+
   // ------------------------------------------------------------------ sfx
+
+  /** Morning star impact: a thud with a crunch on top. */
+  smash() {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    const t = c.currentTime;
+    this.kick(t, 1.2);
+    const src = c.createBufferSource();
+    src.buffer = this.noiseBuffer();
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(2500, t);
+    lp.frequency.exponentialRampToValueAtTime(200, t + 0.25);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.7, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    src.connect(lp).connect(g).connect(this.master);
+    src.start(t);
+    src.stop(t + 0.3);
+  }
+
+  /** Blade bouncing off armour. */
+  clang() {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    const t = c.currentTime;
+    [2200, 3300, 4700].forEach((f) => {
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = 'square';
+      osc.frequency.value = f;
+      g.gain.setValueAtTime(0.06, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.connect(g).connect(this.master);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    });
+  }
+
+  /** Stage cleared. */
+  bell() {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    const t = c.currentTime;
+    [440, 659.3, 880].forEach((f, i) => {
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const at = t + i * 0.12;
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.25, at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, at + 0.9);
+      osc.connect(g).connect(this.master);
+      osc.start(at);
+      osc.stop(at + 1);
+    });
+  }
+
 
   slice() {
     if (!this.ctx) return;
