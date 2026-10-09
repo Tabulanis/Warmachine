@@ -39,6 +39,15 @@ double-click.
   single-file sharing; that file is what to wrap (Capacitor or similar)
   when it goes to app stores. The README's old "serve over HTTP" step is
   gone.
+- Owner (2026-10-09): "keep in mind, we also want to be able to secure it
+  somehow." Not yet specified what that means (copy protection, cheating /
+  score integrity, paid access). Open question; nothing built for it. The
+  constraint to remember: anything that runs client-only is readable by
+  the player, so real protection means either the app stores (paid app /
+  in-app purchase, the store enforces it) or a small server for the parts
+  that must be trusted (leaderboards, unlocks). Minifying/obfuscating the
+  pack is cheap but cosmetic. Do not add licence checks or encryption that
+  ship their own key; they only annoy players.
 - The first version (neon tunnel, drones/missiles/mines) is commit d420b82
   if anything from it is ever wanted back.
 - On GitHub: https://github.com/Tabulanis/Warmachine (public), branch
