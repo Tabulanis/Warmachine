@@ -187,10 +187,10 @@ function buildEnemy(type, dir) {
     const wl = box(g, M.batWing, 0.7, 0.04, 0.35, -0.5, 0, 0); wl.name = 'wingL';
     const wr = box(g, M.batWing, 0.7, 0.04, 0.35, 0.5, 0, 0); wr.name = 'wingR';
   } else if (type === 'boss') {
-    box(g, M.steelDark, 1.0, 1.2, 0.6, 0, 0, 0);
+    box(g, M.steel, 1.0, 1.2, 0.6, 0, 0, 0);
     box(g, M.gold, 1.1, 0.14, 0.7, 0, 0.66, 0);                   // gilded pauldrons
     box(g, M.carpet, 1.1, 1.5, 0.1, 0, -0.1, -0.36);               // cape
-    box(g, M.steelDark, 0.6, 0.6, 0.6, 0, 1.0, 0);                 // great helm
+    box(g, M.steel, 0.6, 0.6, 0.6, 0, 1.0, 0);                     // great helm
     sphere(g, M.eye, 0.07, -0.14, 1.02, 0.3);
     sphere(g, M.eye, 0.07, 0.14, 1.02, 0.3);
     box(g, M.gold, 0.7, 0.12, 0.7, 0, 1.34, 0);                    // crown
